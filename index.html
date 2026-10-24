@@ -2,26 +2,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Task Manager</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather App</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>My Task Manager</h1>
-        <p>Organize your day, one task at a time!</p>
+  <div class="weather-card">
+    <h1>🌤️ Weather App</h1>
+    <p>Check the weather in your city</p>
 
-        <div class="task-input">
-            <input type="text" id="taskInput" placeholder="Enter your task...">
-            <button id="addBtn">Add Task</button>
-        </div> 
-		<div id="taskCounter">Total Tasks: 0 | Completed: 0</div>
+    <form id="weather-form">
+      <input
+        type="text"
+        id="city"
+        placeholder="Enter city name"
+        required
+      >
+      <button type="submit">Get Weather</button>
+    </form>
 
-        <ul id="taskList"></ul>
-        <p id="message"></p>
+    <div id="weather-result">
+      Enter a city to see its weather.
     </div>
+  </div>
 
-    <script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

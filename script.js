@@ -1,85 +1,62 @@
 
-const taskInput = document.getElementById("taskInput");
-const addBtn = document.getElementById("addBtn");
-const taskList = document.getElementById("taskList");
-const message = document.getElementById("message");
+const form = document.getElementById("weather-form");
+const cityInput = document.getElementById("city");
+const result = document.getElementById("weather-result");
 
-let tasks = JSON.parse(localStorage.getItem("myTasks")) || [];
+form.addEventListener("submit", async function (event) {
+  event.preventDefault();
 
-function saveTasks() {
-    localStorage.setItem("myTasks", JSON.stringify(tasks));
-}
+  const city = cityInput.value.trim();
 
-function displayTasks() {
-	const taskCounter = document.getElementById("taskCounter");
+  if (!city) {
+    result.textContent = "Please enter a city name.";
+    return;
+  }
 
-const completedCount = tasks.filter(function(task) {
-    return task.completed;
-}).length;
-const pendingCount = tasks.length - completedCount;
+  result.textContent = "Loading weather...";
 
-taskCounter.textContent =
-    "Total Tasks: " + tasks.length +
-    " | Completed: " + completedCount +
-" | Pending: " + pendingCount;
-    taskList.innerHTML = "";
+  try {
+    const geoUrl =
+      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`;
 
-    tasks.forEach(function(task, index) {
-        const li = document.createElement("li");
-        const span = document.createElement("span");
-        const completeBtn = document.createElement("button");
-        const deleteBtn = document.createElement("button");
+    const geoResponse = await fetch(geoUrl);
 
-        span.textContent = task.text;
-
-        if (task.completed) {
-            li.classList.add("completed");
-        }
-
-        completeBtn.textContent = task.completed ? "Undo" : "Done";
-        completeBtn.addEventListener("click", function() {
-            tasks[index].completed = !tasks[index].completed;
-            saveTasks();
-            displayTasks();
-        });
-
-        deleteBtn.textContent = "Delete";
-        deleteBtn.className = "delete-btn";
-        deleteBtn.addEventListener("click", function() {
-            tasks.splice(index, 1);
-            saveTasks();
-            displayTasks();
-        });
-
-        li.append(span, completeBtn, deleteBtn);
-        taskList.appendChild(li);
-    });
-}
-
-function addTask() {
-    const text = taskInput.value.trim();
-
-    if (text === "") {
-        message.textContent = "Please enter a task!";
-        message.style.color = "red";
-        return;
+    if (!geoResponse.ok) {
+      throw new Error("City search failed");
     }
 
-    tasks.push({ text: text, completed: false });
-    saveTasks();
-    displayTasks();
+    const geoData = await geoResponse.json();
 
-    taskInput.value = "";
-    message.textContent = "Task saved successfully!";
-    message.style.color = "green";
-}
-
-addBtn.addEventListener("click", addTask);
-
-taskInput.addEventListener("keydown", function(event) {
-    if (event.key === "Enter") {
-        addTask();
+    if (!geoData.results || geoData.results.length === 0) {
+      result.textContent = "City not found. Try another city.";
+      return;
     }
+
+    const place = geoData.results[0];
+
+    const weatherUrl =
+      `https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m&timezone=auto`;
+
+    const weatherResponse = await fetch(weatherUrl);
+
+    if (!weatherResponse.ok) {
+      throw new Error("Weather request failed");
+    }
+
+    const weatherData = await weatherResponse.json();
+    const weather = weatherData.current;
+
+    result.innerHTML = `
+      <h2>${place.name}, ${place.country || ""}</h2>
+      <p>🌡️ Temperature: ${weather.temperature_2m} °C</p>
+      <p>🤗 Feels like: ${weather.apparent_temperature} °C</p>
+      <p>💧 Humidity: ${weather.relative_humidity_2m}%</p>
+      <p>💨 Wind speed: ${weather.wind_speed_10m} km/h</p>
+      <p><small>Updated: ${weather.time.replace("T", " ")}</small></p>
+    `;
+  } catch (error) {
+    result.textContent =
+      "Unable to load weather. Check your internet and try again.";
+    console.error(error);
+  }
 });
-
-displayTasks();
